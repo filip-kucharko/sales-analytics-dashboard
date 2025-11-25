@@ -170,10 +170,6 @@ pnpm-debug.log*
 # ============================================
 # PROJECT SPECIFIC - SALES ANALYTICS
 # ============================================
-# RAW DATA - DON'T COMMIT LARGE CSV FILES!
-database/raw-data/*.csv
-database/raw-data/*.xlsx
-database/raw-data/*.xls
 
 # CLEANED DATA - OPTIONAL: Uncomment if files are too large
 # database/cleaned-data/*.csv
