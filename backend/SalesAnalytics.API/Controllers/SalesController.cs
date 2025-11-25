@@ -72,15 +72,16 @@ namespace SalesAnalytics.API.Controllers
                 if (endDate.HasValue)
                     query = query.Where(s => s.InvoiceDate <= endDate.Value);
 
-                var monthlySales = await query
+                // First, get the grouped data with Month as int
+                var monthlySalesData = await query
                     .GroupBy(s => new { 
                         Year = s.InvoiceDate.Year, 
                         Month = s.InvoiceDate.Month 
                     })
-                    .Select(g => new MonthlySalesDTO
+                    .Select(g => new
                     {
                         Year = g.Key.Year,
-                        Month = g.Key.Month.ToString("D2"), // Format: 01, 02, etc.
+                        Month = g.Key.Month,  // Keep as int for now
                         Revenue = g.Sum(s => s.TotalAmount),
                         TransactionCount = g.Count(),
                         AverageOrderValue = g.Average(s => s.TotalAmount)
@@ -88,6 +89,16 @@ namespace SalesAnalytics.API.Controllers
                     .OrderBy(m => m.Year)
                     .ThenBy(m => m.Month)
                     .ToListAsync();
+
+                // Then, convert to DTO with Month as formatted string in C# code
+                var monthlySales = monthlySalesData.Select(m => new MonthlySalesDTO
+                {
+                    Year = m.Year,
+                    Month = m.Month.ToString("D2"), // Format here in C# code!
+                    Revenue = m.Revenue,
+                    TransactionCount = m.TransactionCount,
+                    AverageOrderValue = m.AverageOrderValue
+                }).ToList();
 
                 return Ok(monthlySales);
             }
@@ -168,7 +179,17 @@ namespace SalesAnalytics.API.Controllers
                 if (endDate.HasValue)
                     query = query.Where(s => s.InvoiceDate <= endDate.Value);
 
-                var salesByDay = await query
+                // Get all sales data first
+                var allSales = await query
+                    .Select(s => new 
+                    { 
+                        s.InvoiceDate,
+                        s.TotalAmount 
+                    })
+                    .ToListAsync();
+
+                // Group by day of week in C# code (client-side)
+                var salesByDay = allSales
                     .GroupBy(s => s.InvoiceDate.DayOfWeek)
                     .Select(g => new
                     {
@@ -177,7 +198,7 @@ namespace SalesAnalytics.API.Controllers
                         TransactionCount = g.Count(),
                         AverageOrderValue = g.Average(s => s.TotalAmount)
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 // Order by day of week (Monday first)
                 var orderedDays = new[] { 
@@ -196,6 +217,151 @@ namespace SalesAnalytics.API.Controllers
             {
                 return StatusCode(500, new { message = "Error retrieving sales by day", error = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Compare current month vs previous month with growth metrics
+        /// </summary>
+        [HttpGet("comparison")]
+        public async Task<ActionResult<SalesComparisonDTO>> GetComparison()
+        {
+            try
+            {
+                var now = DateTime.Now;
+                var currentMonthStart = new DateTime(now.Year, now.Month, 1);
+                var currentMonthEnd = currentMonthStart.AddMonths(1).AddDays(-1);
+                var previousMonthStart = currentMonthStart.AddMonths(-1);
+                var previousMonthEnd = currentMonthStart.AddDays(-1);
+
+                // Current month data
+                var currentData = await GetPeriodData(currentMonthStart, currentMonthEnd);
+                
+                // Previous month data
+                var previousData = await GetPeriodData(previousMonthStart, previousMonthEnd);
+
+                // Calculate growth
+                var growth = new GrowthMetricsDTO
+                {
+                    RevenueGrowth = CalculateGrowth(previousData.Revenue, currentData.Revenue),
+                    TransactionGrowth = CalculateGrowth(previousData.TransactionCount, currentData.TransactionCount),
+                    AverageOrderGrowth = CalculateGrowth(previousData.AverageOrderValue, currentData.AverageOrderValue),
+                    CustomerGrowth = CalculateGrowth(previousData.UniqueCustomers, currentData.UniqueCustomers),
+                    Trend = currentData.Revenue > previousData.Revenue ? "up" : 
+                            currentData.Revenue < previousData.Revenue ? "down" : "neutral"
+                };
+
+                return Ok(new SalesComparisonDTO
+                {
+                    CurrentPeriod = currentData,
+                    PreviousPeriod = previousData,
+                    Growth = growth
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving comparison data", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get sales pattern by hour of day
+        /// </summary>
+        [HttpGet("by-hour")]
+        public async Task<ActionResult<List<HourlySalesDTO>>> GetSalesByHour(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            try
+            {
+                var query = _context.Sales.AsQueryable();
+
+                if (startDate.HasValue)
+                    query = query.Where(s => s.InvoiceDate >= startDate.Value);
+
+                if (endDate.HasValue)
+                    query = query.Where(s => s.InvoiceDate <= endDate.Value);
+
+                var hourlySales = await query
+                    .GroupBy(s => s.InvoiceDate.Hour)
+                    .Select(g => new HourlySalesDTO
+                    {
+                        Hour = g.Key,
+                        Revenue = g.Sum(s => s.TotalAmount),
+                        TransactionCount = g.Count(),
+                        AverageOrderValue = g.Average(s => s.TotalAmount)
+                    })
+                    .OrderBy(h => h.Hour)
+                    .ToListAsync();
+
+                return Ok(hourlySales);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving hourly sales", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get most recent transactions
+        /// </summary>
+        [HttpGet("recent")]
+        public async Task<ActionResult<List<RecentSaleDTO>>> GetRecentSales(
+            [FromQuery] int limit = 10)
+        {
+            try
+            {
+                var recentSales = await _context.Sales
+                    .Include(s => s.Product)
+                    .Include(s => s.Region)
+                    .OrderByDescending(s => s.InvoiceDate)
+                    .Take(limit)
+                    .Select(s => new RecentSaleDTO
+                    {
+                        InvoiceNo = s.InvoiceNo,
+                        InvoiceDate = s.InvoiceDate,
+                        ProductDescription = s.Product!.Description ?? "Unknown",
+                        Country = s.Region!.Country,
+                        Quantity = s.Quantity,
+                        TotalAmount = s.TotalAmount
+                    })
+                    .ToListAsync();
+
+                return Ok(recentSales);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving recent sales", error = ex.Message });
+            }
+        }
+
+        // Helper method for comparison
+        private async Task<PeriodDataDTO> GetPeriodData(DateTime startDate, DateTime endDate)
+        {
+            var query = _context.Sales
+                .Where(s => s.InvoiceDate >= startDate && s.InvoiceDate <= endDate);
+
+            return new PeriodDataDTO
+            {
+                Revenue = await query.SumAsync(s => s.TotalAmount),
+                TransactionCount = await query.CountAsync(),
+                AverageOrderValue = await query.AverageAsync(s => s.TotalAmount),
+                UniqueCustomers = await query.Select(s => s.CustomerId).Distinct().CountAsync(),
+                StartDate = startDate,
+                EndDate = endDate
+            };
+        }
+
+        // Helper method to calculate growth percentage
+        private decimal CalculateGrowth(decimal oldValue, decimal newValue)
+        {
+            if (oldValue == 0) return 0;
+            return Math.Round(((newValue - oldValue) / oldValue) * 100, 2);
+        }
+
+        private decimal CalculateGrowth(int oldValue, int newValue)
+        {
+            if (oldValue == 0) return 0;
+            return Math.Round(((decimal)(newValue - oldValue) / oldValue) * 100, 2);
         }
     }
 }
