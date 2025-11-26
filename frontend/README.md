@@ -1,73 +1,122 @@
-# React + TypeScript + Vite
+# Sales Analytics Dashboard - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern, responsive sales analytics dashboard built with React and TypeScript.
 
-Currently, two official plugins are available:
+![Dashboard Preview](../docs/dashboard-screenshot.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Interactive Data Visualization**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+  - Sales trend chart with Month/Overall view
+  - Geographic sales map with country-level data
+  - Regional breakdown pie chart
+  - Top 5 products bar chart
 
-## Expanding the ESLint configuration
+- **Real-time Metrics**
+  - Total revenue with transaction count
+  - Average order value
+  - Unique customers count
+  - Products sold
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool & dev server
+- **Tailwind CSS** - Styling
+- **Recharts** - Chart library
+- **react-simple-maps** - Geographic visualization
+- **Axios** - HTTP client
+- **Lucide React** - Icons
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Install dependencies
+npm install
+
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Configuration
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### API Endpoint
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Update the backend URL in `src/services/api.ts`:
+
+```typescript
+const API_BASE_URL = "http://localhost:5192/api";
 ```
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── Dashboard.tsx    # Main dashboard layout
+│   ├── Header.tsx       # App header
+│   ├── KPICard.tsx      # Reusable KPI card
+│   ├── SalesTrendChart.tsx
+│   ├── RegionalSalesToggle.tsx
+│   ├── SalesMapChart.tsx
+│   ├── RegionalSalesChart.tsx
+│   └── TopProductsChart.tsx
+├── services/            # API communication
+│   └── api.ts
+├── types/               # TypeScript interfaces
+│   └── index.ts
+├── hooks/               # Custom React hooks
+│   └── useSalesData.ts
+├── App.tsx
+└── main.tsx
+```
+
+## Components
+
+### Dashboard
+
+Main layout component with 3-column grid:
+
+- Left: KPI cards + Sales trend
+- Middle: Map/Pie chart toggle
+- Right: Top products
+
+### KPICard
+
+Reusable card component for displaying metrics with icons and optional trends.
+
+### SalesTrendChart
+
+Line chart with Month/Overall toggle and navigation arrows for monthly view.
+
+### RegionalSalesToggle
+
+Container with tab switcher for Map and Pie chart views.
+
+### SalesMapChart
+
+Interactive world map with color-coded countries based on revenue.
+
+### RegionalSalesChart
+
+Pie chart showing top 5 countries + others with percentage breakdown.
+
+### TopProductsChart
+
+Horizontal bar chart displaying top 5 products by revenue.
+
+## API Integration
+
+The app communicates with a .NET backend API:
+
+- `GET /api/sales/summary` - Overall sales metrics
+- `GET /api/sales/by-month` - Monthly sales data
+- `GET /api/sales/by-region` - Regional breakdown
+- `GET /api/products/top` - Top products
+
+## Backend Repository
+
+This frontend connects to a .NET Web API backend. See `../backend/README.md` for backend documentation.
