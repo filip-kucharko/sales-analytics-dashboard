@@ -99,7 +99,7 @@ export default function SalesMapChart() {
           }}
         >
           <Geographies geography={geoUrl}>
-            {({ geographies }) =>
+            {({ geographies }: { geographies: any[] }) =>
               geographies.map((geo) => {
                 const countryName = geo.properties.name;
                 const isHovered = hoveredCountry === countryName;
