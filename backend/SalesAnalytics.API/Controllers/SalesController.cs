@@ -220,47 +220,61 @@ namespace SalesAnalytics.API.Controllers
         }
 
         /// <summary>
-        /// Compare current month vs previous month with growth metrics
+        /// Compare two consecutive months from the dataset with growth metrics
         /// </summary>
         [HttpGet("comparison")]
-        public async Task<ActionResult<SalesComparisonDTO>> GetComparison()
+        public async Task<ActionResult<SalesComparisonDTO>> GetComparison(
+        [FromQuery] int? year = null,
+        [FromQuery] int? month = null)
         {
-            try
+        try
+        {
+            // If no year/month provided, use the latest month in data
+            DateTime currentMonthStart;
+            
+            if (year.HasValue && month.HasValue)
             {
-                var now = DateTime.Now;
-                var currentMonthStart = new DateTime(now.Year, now.Month, 1);
-                var currentMonthEnd = currentMonthStart.AddMonths(1).AddDays(-1);
-                var previousMonthStart = currentMonthStart.AddMonths(-1);
-                var previousMonthEnd = currentMonthStart.AddDays(-1);
-
-                // Current month data
-                var currentData = await GetPeriodData(currentMonthStart, currentMonthEnd);
-                
-                // Previous month data
-                var previousData = await GetPeriodData(previousMonthStart, previousMonthEnd);
-
-                // Calculate growth
-                var growth = new GrowthMetricsDTO
-                {
-                    RevenueGrowth = CalculateGrowth(previousData.Revenue, currentData.Revenue),
-                    TransactionGrowth = CalculateGrowth(previousData.TransactionCount, currentData.TransactionCount),
-                    AverageOrderGrowth = CalculateGrowth(previousData.AverageOrderValue, currentData.AverageOrderValue),
-                    CustomerGrowth = CalculateGrowth(previousData.UniqueCustomers, currentData.UniqueCustomers),
-                    Trend = currentData.Revenue > previousData.Revenue ? "up" : 
-                            currentData.Revenue < previousData.Revenue ? "down" : "neutral"
-                };
-
-                return Ok(new SalesComparisonDTO
-                {
-                    CurrentPeriod = currentData,
-                    PreviousPeriod = previousData,
-                    Growth = growth
-                });
+                currentMonthStart = new DateTime(year.Value, month.Value, 1);
             }
-            catch (Exception ex)
+            else
             {
-                return StatusCode(500, new { message = "Error retrieving comparison data", error = ex.Message });
+                // Get the latest date in dataset
+                var latestDate = await _context.Sales.MaxAsync(s => s.InvoiceDate);
+                currentMonthStart = new DateTime(latestDate.Year, latestDate.Month, 1);
             }
+            
+            var currentMonthEnd = currentMonthStart.AddMonths(1).AddDays(-1);
+            var previousMonthStart = currentMonthStart.AddMonths(-1);
+            var previousMonthEnd = currentMonthStart.AddDays(-1);
+
+            // Current month data
+            var currentData = await GetPeriodData(currentMonthStart, currentMonthEnd);
+            
+            // Previous month data
+            var previousData = await GetPeriodData(previousMonthStart, previousMonthEnd);
+
+            // Calculate growth
+            var growth = new GrowthMetricsDTO
+            {
+                RevenueGrowth = CalculateGrowth(previousData.Revenue, currentData.Revenue),
+                TransactionGrowth = CalculateGrowth(previousData.TransactionCount, currentData.TransactionCount),
+                AverageOrderGrowth = CalculateGrowth(previousData.AverageOrderValue, currentData.AverageOrderValue),
+                CustomerGrowth = CalculateGrowth(previousData.UniqueCustomers, currentData.UniqueCustomers),
+                Trend = currentData.Revenue > previousData.Revenue ? "up" : 
+                        currentData.Revenue < previousData.Revenue ? "down" : "neutral"
+            };
+
+            return Ok(new SalesComparisonDTO
+            {
+                CurrentPeriod = currentData,
+                PreviousPeriod = previousData,
+                Growth = growth
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving comparison data", error = ex.Message });
+        }
         }
 
         /// <summary>
