@@ -37,8 +37,8 @@ export default function Dashboard() {
       className="grid grid-cols-12 gap-4"
       style={{ height: "calc(100vh - 80px)" }}
     >
-      {/* LINKE SPALTE: KPIs + Sales Trend */}
-      <div className="col-span-4 flex flex-col gap-4">
+      {/* Left Row: KPIs + Sales Trend */}
+      <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
         {/* KPI Cards 2x2 Grid */}
         <div className="grid grid-cols-2 gap-4">
           <KPICard
@@ -82,13 +82,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* MITTLERE SPALTE: Map/Pie Toggle */}
-      <div className="col-span-4">
+      {/* MIDDLE COLUMN: Map/Pie Toggle */}
+      <div className="col-span-12 lg:col-span-4">
         <RegionalSalesToggle />
       </div>
 
-      {/* RECHTE SPALTE: Top Products */}
-      <div className="col-span-4">
+      {/* RIGHT COLUMN: Top Products */}
+      <div className="col-span-12 lg:col-span-4">
         <TopProductsChart />
       </div>
     </div>
