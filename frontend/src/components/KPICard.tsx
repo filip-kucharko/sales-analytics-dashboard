@@ -21,38 +21,40 @@ export default function KPICard({
   loading = false,
 }: KPICardProps) {
   return (
-    <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-slate-600 transition-colors">
+    <div className="bg-slate-800 rounded-lg p-4 border border-slate-700 hover:border-slate-600 transition-colors">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-400">{title}</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+          {title}
+        </h3>
         {icon && <div className="text-gray-400">{icon}</div>}
       </div>
 
       {/* Value */}
       {loading ? (
-        <div className="h-8 bg-slate-700 rounded animate-pulse"></div>
+        <div className="h-7 bg-slate-700 rounded animate-pulse"></div>
       ) : (
-        <div className="mb-2">
-          <p className="text-3xl font-bold text-white">{value}</p>
+        <div className="mb-1">
+          <p className="text-2xl font-bold text-white">{value}</p>
         </div>
       )}
 
       {/* Subtitle & Trend */}
       <div className="flex items-center justify-between">
-        {subtitle && <p className="text-sm text-gray-400">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
 
         {trend && (
           <div
-            className={`flex items-center gap-1 text-sm font-medium ${
+            className={`flex items-center gap-1 text-xs font-medium ${
               trend.isPositive ? "text-green-500" : "text-red-500"
             }`}
           >
             {trend.isPositive ? (
-              <TrendingUp className="w-4 h-4" />
+              <TrendingUp className="w-3 h-3" />
             ) : trend.value === 0 ? (
-              <Minus className="w-4 h-4" />
+              <Minus className="w-3 h-3" />
             ) : (
-              <TrendingDown className="w-4 h-4" />
+              <TrendingDown className="w-3 h-3" />
             )}
             <span>{Math.abs(trend.value)}%</span>
           </div>

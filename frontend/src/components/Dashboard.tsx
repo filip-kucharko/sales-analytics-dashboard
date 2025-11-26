@@ -1,11 +1,13 @@
 import { DollarSign, ShoppingCart, Users, Package } from "lucide-react";
 import KPICard from "./KPICard";
+import SalesTrendChart from "./SalesTrendChart";
+import TopProductsChart from "./TopProductsChart";
 import { useSalesData } from "../hooks/useSalesData";
+import RegionalSalesToggle from "./RegionalSalesToggle";
 
 export default function Dashboard() {
   const { data, loading, error } = useSalesData();
 
-  // Format currency
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-GB", {
       style: "currency",
@@ -15,7 +17,6 @@ export default function Dashboard() {
     }).format(value);
   };
 
-  // Format number with commas
   const formatNumber = (value: number) => {
     return new Intl.NumberFormat("en-US").format(value);
   };
@@ -32,78 +33,63 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard
-          title="Total Revenue"
-          value={data ? formatCurrency(data.totalRevenue) : "---"}
-          subtitle={
-            data
-              ? `${formatNumber(data.totalTransactions)} transactions`
-              : "---"
-          }
-          icon={<DollarSign className="w-5 h-5" />}
-          loading={loading}
-        />
+    <div
+      className="grid grid-cols-12 gap-4"
+      style={{ height: "calc(100vh - 80px)" }}
+    >
+      {/* LINKE SPALTE: KPIs + Sales Trend */}
+      <div className="col-span-4 flex flex-col gap-4">
+        {/* KPI Cards 2x2 Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <KPICard
+            title="Revenue"
+            value={data ? formatCurrency(data.totalRevenue) : "---"}
+            subtitle={
+              data ? `${formatNumber(data.totalTransactions)} orders` : "---"
+            }
+            icon={<DollarSign className="w-4 h-4" />}
+            loading={loading}
+          />
 
-        <KPICard
-          title="Average Order Value"
-          value={data ? formatCurrency(data.averageOrderValue) : "---"}
-          subtitle="Per transaction"
-          icon={<ShoppingCart className="w-5 h-5" />}
-          loading={loading}
-        />
+          <KPICard
+            title="Avg Order"
+            value={data ? formatCurrency(data.averageOrderValue) : "---"}
+            subtitle="Per order"
+            icon={<ShoppingCart className="w-4 h-4" />}
+            loading={loading}
+          />
 
-        <KPICard
-          title="Unique Customers"
-          value={data ? formatNumber(data.uniqueCustomers) : "---"}
-          subtitle="Active customers"
-          icon={<Users className="w-5 h-5" />}
-          loading={loading}
-        />
+          <KPICard
+            title="Customers"
+            value={data ? formatNumber(data.uniqueCustomers) : "---"}
+            subtitle="Active"
+            icon={<Users className="w-4 h-4" />}
+            loading={loading}
+          />
 
-        <KPICard
-          title="Products Sold"
-          value={data ? formatNumber(data.uniqueProducts) : "---"}
-          subtitle="Unique items"
-          icon={<Package className="w-5 h-5" />}
-          loading={loading}
-        />
+          <KPICard
+            title="Products"
+            value={data ? formatNumber(data.uniqueProducts) : "---"}
+            subtitle="Unique"
+            icon={<Package className="w-4 h-4" />}
+            loading={loading}
+          />
+        </div>
+
+        {/* Sales Trend Chart */}
+        <div className="flex-1 min-h-0">
+          <SalesTrendChart />
+        </div>
       </div>
 
-      {/* Date Range Info */}
-      {data && (
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <p className="text-sm text-gray-400">
-            Data from{" "}
-            <span className="text-white font-medium">
-              {new Date(data.startDate).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-            {" to "}
-            <span className="text-white font-medium">
-              {new Date(data.endDate).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-          </p>
-        </div>
-      )}
+      {/* MITTLERE SPALTE: Map/Pie Toggle */}
+      <div className="col-span-4">
+        <RegionalSalesToggle />
+      </div>
 
-      {/* Placeholder for Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 h-80 flex items-center justify-center">
-          <p className="text-gray-400">Sales Trend Chart (Coming soon)</p>
-        </div>
-        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 h-80 flex items-center justify-center">
-          <p className="text-gray-400">Regional Sales Chart (Coming soon)</p>
-        </div>
+      {/* RECHTE SPALTE: Top Products */}
+      <div className="col-span-4">
+        <TopProductsChart />
       </div>
     </div>
   );
