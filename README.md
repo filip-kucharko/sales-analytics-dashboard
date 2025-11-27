@@ -126,7 +126,7 @@ npm install
 npm run dev
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Backend
 
